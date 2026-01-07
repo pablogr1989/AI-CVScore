@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, IpcMainInvokeEvent } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runGeneration, getRenderedHtml } from './index.js';
 import { Logger } from './core/logger.js';
+import { AiService } from './infra/aiService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,28 +16,36 @@ const appPath = isDev ? path.resolve(__dirname, '..') : path.resolve(__dirname, 
 const logger = new Logger(externalPath);
 logger.info('=== INICIO DE APLICACIÓN ===');
 
-const cvPath = path.join(externalPath, 'data', 'cv.md');
+const infoPath = path.join(externalPath, 'data', 'info.md');
 
-process.on('uncaughtException', (err) => {
+let aiService: AiService;
+try {
+  aiService = new AiService(externalPath);
+} catch (err: any) {
+  logger.error('Error al inicializar AiService', err.message);
+}
+
+process.on('uncaughtException', (err: Error) => {
   logger.error('CRITICAL: Uncaught Exception en Main', { message: err.message, stack: err.stack });
 });
 
-function ensureDataFile() {
+function ensureDataFiles(): void {
   try {
-    const dataDir = path.dirname(cvPath);
+    const dataDir = path.dirname(infoPath);
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
-    if (!fs.existsSync(cvPath)) {
-      const defaultContent = `---\nbasics:\n  name: "Edita tu nombre"\n---\n# CV`;
-      fs.writeFileSync(cvPath, defaultContent, 'utf-8');
+    
+    if (!fs.existsSync(infoPath)) {
+      const defaultInfo = `# Mis Datos\n\nEscribe aquí tu experiencia, skills y formación...`;
+      fs.writeFileSync(infoPath, defaultInfo, 'utf-8');
     }
   } catch (err: any) {
-    logger.error('Error en ensureDataFile', err.message);
+    logger.error('Error en ensureDataFiles', err.message);
   }
 }
 
-function createWindow() {
+function createWindow(): void {
   const win = new BrowserWindow({
     width: 1400, height: 900,
     webPreferences: {
@@ -44,25 +53,65 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false
     },
-    title: "CV Generation"
+    title: "CV Generation + AI Optimizer"
   });
 
   const htmlPath = path.join(appPath, 'src', 'renderer', 'index.html');
-  win.loadFile(htmlPath).catch(err => {
+  win.loadFile(htmlPath).catch((err: Error) => {
     logger.error('Error al ejecutar win.loadFile', err.message);
   });
 }
 
-ipcMain.on('log-from-renderer', (event, { level, message, data }) => {
+ipcMain.on('log-from-renderer', (_event: any, { level, message, data }: { level: string; message: string; data?: any }) => {
   if (level === 'ERROR') logger.error(`[Renderer] ${message}`, data);
   else logger.info(`[Renderer] ${message}`, data);
 });
 
-ipcMain.handle('load-cv', () => fs.readFileSync(cvPath, 'utf-8'));
-ipcMain.handle('save-cv', (_, content) => fs.writeFileSync(cvPath, content, 'utf-8'));
+ipcMain.handle('select-file', async (): Promise<{ content: string; path: string } | null> => {
+  const result = await dialog.showOpenDialog({
+    title: 'Seleccionar archivo de CV (Markdown)',
+    filters: [{ name: 'Markdown', extensions: ['md'] }],
+    properties: ['openFile']
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const filePath = result.filePaths[0];
+  const content = fs.readFileSync(filePath, 'utf-8');
+  return { content, path: filePath };
+});
 
-// Nuevo: Manejador para seleccionar carpeta de destino
-ipcMain.handle('select-directory', async () => {
+ipcMain.handle('save-cv', (_event: IpcMainInvokeEvent, content: string, filePath: string): void => {
+  fs.writeFileSync(filePath, content, 'utf-8');
+});
+
+ipcMain.handle('load-info', (): string => fs.readFileSync(infoPath, 'utf-8'));
+ipcMain.handle('save-info', (_event: IpcMainInvokeEvent, content: string): void => fs.writeFileSync(infoPath, content, 'utf-8'));
+
+ipcMain.handle('generate-cv-ai', async (_event: IpcMainInvokeEvent, jobOffer: string, personalInfo: string, specifications: string): Promise<string> => {
+  if (!aiService) throw new Error('El servicio de IA no está configurado correctamente.');
+
+  try {
+    const systemPromptPath = path.join(externalPath, 'prompts', 'generation-system.md');
+    const systemPrompt = fs.readFileSync(systemPromptPath, 'utf-8');
+
+    const fewShotsDir = path.join(externalPath, 'few-shots');
+    const examples = [
+      { role: "user", content: fs.readFileSync(path.join(fewShotsDir, '01-user.md'), 'utf-8') },
+      { role: "assistant", content: fs.readFileSync(path.join(fewShotsDir, '01-assistant.md'), 'utf-8') },
+      { role: "user", content: fs.readFileSync(path.join(fewShotsDir, '02-user.md'), 'utf-8') },
+      { role: "assistant", content: fs.readFileSync(path.join(fewShotsDir, '02-assistant.md'), 'utf-8') },
+      { role: "user", content: fs.readFileSync(path.join(fewShotsDir, '03-user.md'), 'utf-8') },
+      { role: "assistant", content: fs.readFileSync(path.join(fewShotsDir, '03-assistant.md'), 'utf-8') }
+    ];
+
+    const finalUserMessage = `Oferta:\n${jobOffer}\n\nPerfil:\n${personalInfo}\n\nEspecificaciones:\n${specifications}`;
+    return await aiService.generateOptimizedCv(systemPrompt, examples, finalUserMessage, ""); 
+  } catch (error: any) {
+    logger.error('Error cargando prompts o llamando a la IA', error.message);
+    throw new Error(`Fallo en la preparación de la IA: ${error.message}`);
+  }
+});
+
+ipcMain.handle('select-directory', async (): Promise<string | null> => {
   const result = await dialog.showOpenDialog({
     title: 'Selecciona la carpeta donde guardar el CV',
     properties: ['openDirectory', 'createDirectory']
@@ -71,38 +120,31 @@ ipcMain.handle('select-directory', async () => {
   return result.filePaths[0];
 });
 
-// Actualizado: Ahora acepta targetDir
-ipcMain.handle('generate-pdf', (_, content, templateName, targetDir) => {
+ipcMain.handle('generate-pdf', (_event: IpcMainInvokeEvent, content: string, templateName: string, targetDir: string): Promise<string> => {
   return runGeneration(content, templateName, externalPath, targetDir);
 });
 
-ipcMain.handle('open-pdf', async (_, p) => {
-  logger.info('Solicitud de apertura de PDF:', p);
-  if (!p || !fs.existsSync(p)) {
-    const errorMsg = `La ruta no es válida o el archivo no existe: ${p}`;
-    logger.error(errorMsg);
-    return errorMsg;
-  }
+ipcMain.handle('open-pdf', async (_event: IpcMainInvokeEvent, p: string): Promise<string> => {
+  if (!p || !fs.existsSync(p)) return `El archivo no existe: ${p}`;
   try {
     const result = await shell.openPath(p);
     return result || '';
   } catch (err: any) {
-    logger.error('Excepción al intentar abrir el PDF:', err.message);
     return err.message;
   }
 });
 
-ipcMain.handle('render-preview', async (_, content, templateName) => {
+ipcMain.handle('render-preview', async (_event: IpcMainInvokeEvent, content: string, templateName: string): Promise<{ success: boolean; html?: string; error?: string }> => {
   try {
-    return { success: true, html: await getRenderedHtml(content, templateName, externalPath) };
+    const html = await getRenderedHtml(content, templateName, externalPath);
+    return { success: true, html };
   } catch (err: any) {
-    logger.error('Error en render-preview', err.message);
     return { success: false, error: err.message };
   }
 });
 
 app.whenReady().then(() => {
-  ensureDataFile();
+  ensureDataFiles();
   createWindow();
 });
 

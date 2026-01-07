@@ -3,133 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: file:;">
-    <title>CV Generation</title>
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            window.api.sendLog('ERROR', 'Fallo en Renderer (Global)', { message, lineno, colno });
-        };
-    </script>
+    <title>CV AI Optimizer</title>
     <style>
         body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: 'Montserrat', sans-serif; background: #1e1e1e; color: white; overflow: hidden; }
-        .controls { padding: 12px 20px; background: #2d2d2d; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #3e3e3e; }
-        .app-container { display: flex; flex: 1; overflow: hidden; }
-        .editor-side { flex: 1; display: flex; flex-direction: column; padding: 15px; border-right: 1px solid #3c3c3c; }
-        .preview-side { flex: 1; display: flex; flex-direction: column; padding: 15px; background: #252526; }
-        textarea { flex: 1; background: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; padding: 15px; font-family: 'Consolas', monospace; font-size: 13px; resize: none; outline: none; border-radius: 4px; }
-        #errorLog { height: 120px; margin-top: 10px; background: #2d1010; color: #ff8888; padding: 12px; font-family: 'Consolas', monospace; font-size: 12px; border-radius: 4px; overflow-y: auto; display: none; border: 1px solid #551a1a; line-height: 1.4; }
-        iframe { flex: 1; background: white; border: none; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        button, select { padding: 8px 12px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; }
-        select { background: #3e3e3e; color: white; outline: none; }
-        .btn-save { background: #007acc; color: white; }
-        .btn-pdf { background: #28a745; color: white; }
-        .btn-open { background: #ffc107; color: #212529; display: none; margin-left: 10px; }
-        #status { font-size: 12px; color: #adb5bd; margin-left: auto; padding: 4px 8px; border-radius: 3px; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .page { display: none; flex: 1; flex-direction: column; overflow: hidden; padding: 20px; }
+        .page.active { display: flex; }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .footer { padding: 15px 20px; background: #2d2d2d; display: flex; justify-content: space-between; border-top: 1px solid #3c3c3c; }
+        .content-area { display: flex; flex: 1; gap: 20px; overflow: hidden; }
+        .input-panel { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .preview-panel { flex: 1; display: flex; flex-direction: column; background: white; border-radius: 4px; overflow: hidden; }
+        .label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; }
+        textarea { flex: 1; background: #252526; color: #d4d4d4; border: 1px solid #3c3c3c; padding: 12px; font-family: 'Consolas', monospace; font-size: 13px; resize: none; border-radius: 4px; outline: none; }
+        textarea:focus { border-color: #007acc; }
+        button { padding: 10px 20px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+        button:disabled { background: #444 !important; color: #777 !important; cursor: not-allowed; opacity: 0.6; }
+        .btn-primary { background: #007acc; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-ai { background: #6f42c1; color: white; }
+        .btn-nav { background: #3e3e3e; color: white; }
+        .btn-open { background: #ffc107; color: #212529; display: none; }
+        iframe { width: 100%; height: 100%; border: none; }
+        #status { font-size: 12px; color: #adb5bd; align-self: center; }
+        #errorLog2 { background: #3d1010; color: #ff8888; padding: 10px; font-size: 12px; border-radius: 4px; margin-top: 10px; display: none; overflow-y: auto; max-height: 100px; }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <select id="templateSelect" onchange="updatePreview()">
-            <option value="classic">Clásico</option>
-            <option value="modern">Moderno</option>
-        </select>
-        <button class="btn-save" onclick="save()">Guardar</button>
-        <button class="btn-pdf" onclick="generate()">Generar PDF</button>
-        <button id="btnOpen" class="btn-open" onclick="openPdf()">Abrir PDF</button>
-        <span id="status">Listo</span>
+
+    <div id="page1" class="page active">
+        <div class="header">
+            <h2>Paso 1: Configuración e IA</h2>
+            <button class="btn-ai" id="btnAI" onclick="generateFromAI()">✨ Generar CV con IA</button>
+        </div>
+        <div class="content-area">
+            <div class="input-panel">
+                <span class="label">Descripción de la Oferta</span>
+                <textarea id="jobOffer" placeholder="Pega la oferta de trabajo aquí..."></textarea>
+                <span class="label">Mi Información Base (info.md)</span>
+                <textarea id="personalInfo"></textarea>
+            </div>
+            <div class="input-panel">
+                <span class="label">Especificaciones / Detalles Adicionales</span>
+                <textarea id="specifications" placeholder="Añade aquí mejoras, cómo enfocar el CV..."></textarea>
+            </div>
+        </div>
     </div>
-    <div class="app-container">
-        <div class="editor-side">
-            <textarea id="editor"></textarea>
-            <div id="errorLog"></div>
+
+    <div id="page2" class="page">
+        <div class="header">
+            <h2>Paso 2: Edición y Exportación</h2>
+            <select id="templateSelect" onchange="updatePreview()">
+                <option value="classic">Diseño Clásico</option>
+                <option value="modern">Diseño Moderno</option>
+            </select>
+            <button class="btn-nav" onclick="loadExternalCv()">📁 Cargar CV</button>
+            <button class="btn-primary" id="btnSaveCV" onclick="saveCv()" disabled>💾 Guardar CV</button>
+            <button class="btn-success" id="btnExportPDF" onclick="exportPdf()" disabled>📄 Generar PDF</button>
+            <button id="btnOpen" class="btn-open" onclick="openLastPdf()">Abrir PDF</button>
         </div>
-        <div class="preview-side">
-            <iframe id="preview"></iframe>
+        <div class="content-area">
+            <div class="input-panel">
+                <span class="label">Editor de CV (Markdown)</span>
+                <textarea id="cvEditor" placeholder="Genera o carga un CV para editar..."></textarea>
+            </div>
+            <div class="preview-panel">
+                <iframe id="preview"></iframe>
+            </div>
         </div>
+        <div id="errorLog2"></div>
+    </div>
+
+    <div class="footer">
+        <button id="btnBack" class="btn-nav" onclick="showPage(1)" style="visibility: hidden;">⬅️ Configuración</button>
+        <span id="status">Listo</span>
+        <button id="btnNext" class="btn-nav" onclick="showPage(2)">Editor & Exportar ➡️</button>
     </div>
 
     <script>
-        const editor = document.getElementById('editor');
-        const preview = document.getElementById('preview');
-        const status = document.getElementById('status');
-        const errorLog = document.getElementById('errorLog');
-        const templateSelect = document.getElementById('templateSelect');
+        let currentCvPath = null;
+        let lastPdfPath = null;
 
-        function debounce(func, timeout = 500) {
-            let timer;
-            return (...args) => {
-                clearTimeout(timer);
-                timer = setTimeout(() => { func.apply(this, args); }, timeout);
-            };
-        }
+        const cvEditor = document.getElementById('cvEditor');
+        const status = document.getElementById('status');
+        const btnSaveCV = document.getElementById('btnSaveCV');
+        const btnExportPDF = document.getElementById('btnExportPDF');
+        const errorLog2 = document.getElementById('errorLog2');
 
         window.onload = async () => {
-            try {
-                const content = await window.api.loadCV();
-                editor.value = content;
-                updatePreview();
-            } catch (e) {
-                window.api.sendLog('ERROR', 'Error inicial', { error: e.message });
-            }
+            const info = await window.api.loadInfo();
+            document.getElementById('personalInfo').value = info;
         };
 
-        editor.addEventListener('input', debounce(() => updatePreview()));
+        function showPage(num) {
+            document.getElementById('page1').classList.toggle('active', num === 1);
+            document.getElementById('page2').classList.toggle('active', num === 2);
+            document.getElementById('btnBack').style.visibility = (num === 2) ? 'visible' : 'hidden';
+            document.getElementById('btnNext').style.visibility = (num === 1) ? 'visible' : 'hidden';
+            if (num === 2) updatePreview();
+        }
+
+        function validateButtons() {
+            const isEmpty = !cvEditor.value.trim();
+            btnSaveCV.disabled = isEmpty;
+            btnExportPDF.disabled = isEmpty;
+        }
+
+        cvEditor.addEventListener('input', () => {
+            validateButtons();
+            debouncePreview();
+        });
+
+        const debouncePreview = (() => {
+            let timer;
+            return () => {
+                clearTimeout(timer);
+                timer = setTimeout(updatePreview, 500);
+            };
+        })();
 
         async function updatePreview() {
-            const template = templateSelect.value;
-            const result = await window.api.renderPreview(editor.value, template);
-            if (result.success) {
-                let html = result.html;
-                const resourceBase = window.location.href.includes('app.asar') 
-                    ? window.location.href.split('app.asar')[0] 
-                    : window.location.href.replace('src/renderer/index.html', '');
-                html = html.replace('<head>', `<head><base href="${resourceBase}templates/${template}/">`);
+            if (!cvEditor.value.trim()) return;
+            const res = await window.api.renderPreview(cvEditor.value, document.getElementById('templateSelect').value);
+            
+            if (res.success) {
+                const template = document.getElementById('templateSelect').value;
+                
+                // CORRECCIÓN DE RUTAS: Detectar si estamos en app.asar para salir a la carpeta de recursos
+                let resourceBase = window.location.href.replace('src/renderer/index.html', '');
+                if (resourceBase.includes('app.asar')) {
+                    resourceBase = resourceBase.split('app.asar')[0];
+                }
+                
+                let html = res.html.replace('<head>', `<head><base href="${resourceBase}templates/${template}/">`);
                 html = html.replace(/src="profile\.(.*?)"/g, `src="${resourceBase}assets/profile.$1"`);
-                preview.srcdoc = html;
-                errorLog.style.display = "none";
+                
+                document.getElementById('preview').srcdoc = html;
+                errorLog2.style.display = 'none';
                 status.innerText = "✅ Preview actualizado";
             } else {
-                status.innerText = "❌ Error de validación";
-                errorLog.innerText = result.error;
-                errorLog.style.display = "block";
+                errorLog2.innerText = res.error;
+                errorLog2.style.display = 'block';
+                status.innerText = "❌ Error en Preview";
             }
         }
 
-        async function save() {
-            await window.api.saveCV(editor.value);
-            status.innerText = "✅ Guardado correctamente";
+        async function generateFromAI() {
+            const job = document.getElementById('jobOffer').value;
+            const info = document.getElementById('personalInfo').value;
+            const specs = document.getElementById('specifications').value;
+            
+            if (!job || !info) return alert("Por favor, rellena al menos la oferta y tu perfil.");
+
+            status.innerText = "🤖 OpenAI está optimizando tu CV...";
+            document.getElementById('btnAI').disabled = true;
+            try {
+                const result = await window.api.generateCVAI(job, info, specs);
+                cvEditor.value = result;
+                validateButtons();
+                showPage(2);
+                status.innerText = "✨ CV Optimizado correctamente";
+            } catch (e) {
+                status.innerText = "❌ Error en IA";
+                alert(e.message);
+            } finally {
+                document.getElementById('btnAI').disabled = false;
+            }
         }
 
-        async function generate() {
-            status.innerText = "Seleccionando ubicación...";
-            
-            // 1. Abrir diálogo de selección
-            const targetDir = await window.api.selectDirectory();
-            if (!targetDir) {
-                status.innerText = "Generación cancelada";
+        async function loadExternalCv() {
+            const file = await window.api.selectFile();
+            if (file) {
+                cvEditor.value = file.content;
+                currentCvPath = file.path;
+                validateButtons();
+                updatePreview();
+                status.innerText = `📂 Cargado: ${file.path}`;
+            }
+        }
+
+        async function saveCv() {
+            if (!currentCvPath) {
+                alert("Debes cargar un archivo primero.");
                 return;
             }
+            await window.api.saveCV(cvEditor.value, currentCvPath);
+            status.innerText = `✅ Guardado en: ${currentCvPath}`;
+        }
 
-            status.innerText = "Generando archivos...";
+        async function exportPdf() {
+            const dir = await window.api.selectDirectory();
+            if (!dir) return;
+
+            status.innerText = "Generando PDF...";
             try {
-                const template = templateSelect.value;
-                // 2. Generar en la ubicación (la subcarpeta se crea internamente en index.ts)
-                const finalPath = await window.api.generatePDF(editor.value, template, targetDir);
-                window.lastPath = finalPath;
+                const path = await window.api.generatePDF(cvEditor.value, document.getElementById('templateSelect').value, dir);
+                lastPdfPath = path;
                 document.getElementById('btnOpen').style.display = 'inline-block';
-                status.innerText = "✅ PDF listo en: " + finalPath;
+                status.innerText = `✅ PDF Listo en: ${path}`;
             } catch (e) {
-                window.api.sendLog('ERROR', 'Fallo al generar PDF', { error: e.message });
-                status.innerText = "❌ Error en generación";
-                errorLog.innerText = e.message;
-                errorLog.style.display = "block";
+                alert("Error al generar PDF: " + e.message);
             }
         }
 
-        async function openPdf() { 
-            if (window.lastPath) {
-                const error = await window.api.openPDF(window.lastPath); 
-                if (error) alert("No se pudo abrir: " + error);
-            }
+        function openLastPdf() {
+            if (lastPdfPath) window.api.openPDF(lastPdfPath);
         }
     </script>
 </body>
