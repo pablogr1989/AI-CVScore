@@ -5,24 +5,19 @@ import { fileURLToPath } from 'node:url';
 import { runGeneration, getRenderedHtml } from './index.js';
 import { Logger } from './core/logger.js';
 import { AiService } from './infra/aiService.js';
+import { APP_CONFIG, EXTERNAL_PATH } from './core/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const isDev = !app.isPackaged;
-const externalPath = isDev ? path.resolve(__dirname, '..') : process.resourcesPath;
-const appPath = isDev ? path.resolve(__dirname, '..') : path.resolve(__dirname, '..');
-
-const logger = new Logger(externalPath);
-logger.info('=== INICIO DE APLICACIÓN ===');
-
-const infoPath = path.join(externalPath, 'data', 'info.md');
+const logger = new Logger(EXTERNAL_PATH);
 
 let aiService: AiService;
 try {
-  aiService = new AiService(externalPath);
-} catch (err: any) {
-  logger.error('Error al inicializar AiService', err.message);
+  aiService = new AiService();
+} catch (err: unknown) {
+  const message = err instanceof Error ? err.message : 'Error desconocido';
+  logger.error('Error al inicializar AiService', { message });
 }
 
 process.on('uncaughtException', (err: Error) => {
@@ -31,17 +26,18 @@ process.on('uncaughtException', (err: Error) => {
 
 function ensureDataFiles(): void {
   try {
-    const dataDir = path.dirname(infoPath);
+    const dataDir = APP_CONFIG.paths.data;
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     
-    if (!fs.existsSync(infoPath)) {
+    if (!fs.existsSync(APP_CONFIG.paths.info)) {
       const defaultInfo = `# Mis Datos\n\nEscribe aquí tu experiencia, skills y formación...`;
-      fs.writeFileSync(infoPath, defaultInfo, 'utf-8');
+      fs.writeFileSync(APP_CONFIG.paths.info, defaultInfo, 'utf-8');
     }
-  } catch (err: any) {
-    logger.error('Error en ensureDataFiles', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error en ficheros de datos';
+    logger.error('Error en ensureDataFiles', { message });
   }
 }
 
@@ -53,16 +49,16 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false
     },
-    title: "CV Generation + AI Optimizer"
+    title: "AI-CVScore Optimizer"
   });
 
-  const htmlPath = path.join(appPath, 'src', 'renderer', 'index.html');
+  const htmlPath = path.join(EXTERNAL_PATH, 'src', 'renderer', 'index.html');
   win.loadFile(htmlPath).catch((err: Error) => {
-    logger.error('Error al ejecutar win.loadFile', err.message);
+    logger.error('Error al ejecutar win.loadFile', { message: err.message });
   });
 }
 
-ipcMain.on('log-from-renderer', (_event: any, { level, message, data }: { level: string; message: string; data?: any }) => {
+ipcMain.on('log-from-renderer', (_event: IpcMainInvokeEvent, { level, message, data }: { level: string; message: string; data?: Record<string, unknown> }) => {
   if (level === 'ERROR') logger.error(`[Renderer] ${message}`, data);
   else logger.info(`[Renderer] ${message}`, data);
 });
@@ -83,31 +79,31 @@ ipcMain.handle('save-cv', (_event: IpcMainInvokeEvent, content: string, filePath
   fs.writeFileSync(filePath, content, 'utf-8');
 });
 
-ipcMain.handle('load-info', (): string => fs.readFileSync(infoPath, 'utf-8'));
-ipcMain.handle('save-info', (_event: IpcMainInvokeEvent, content: string): void => fs.writeFileSync(infoPath, content, 'utf-8'));
+ipcMain.handle('load-info', (): string => fs.readFileSync(APP_CONFIG.paths.info, 'utf-8'));
+ipcMain.handle('save-info', (_event: IpcMainInvokeEvent, content: string): void => fs.writeFileSync(APP_CONFIG.paths.info, content, 'utf-8'));
 
 ipcMain.handle('generate-cv-ai', async (_event: IpcMainInvokeEvent, jobOffer: string, personalInfo: string, specifications: string): Promise<string> => {
   if (!aiService) throw new Error('El servicio de IA no está configurado correctamente.');
 
   try {
-    const systemPromptPath = path.join(externalPath, 'prompts', 'generation-system.md');
+    const systemPromptPath = path.join(APP_CONFIG.paths.prompts, 'generation-system.md');
     const systemPrompt = fs.readFileSync(systemPromptPath, 'utf-8');
 
-    const fewShotsDir = path.join(externalPath, 'few-shots');
     const examples = [
-      { role: "user", content: fs.readFileSync(path.join(fewShotsDir, '01-user.md'), 'utf-8') },
-      { role: "assistant", content: fs.readFileSync(path.join(fewShotsDir, '01-assistant.md'), 'utf-8') },
-      { role: "user", content: fs.readFileSync(path.join(fewShotsDir, '02-user.md'), 'utf-8') },
-      { role: "assistant", content: fs.readFileSync(path.join(fewShotsDir, '02-assistant.md'), 'utf-8') },
-      { role: "user", content: fs.readFileSync(path.join(fewShotsDir, '03-user.md'), 'utf-8') },
-      { role: "assistant", content: fs.readFileSync(path.join(fewShotsDir, '03-assistant.md'), 'utf-8') }
+      { role: "user" as const, content: fs.readFileSync(path.join(APP_CONFIG.paths.fewShots, '01-user.md'), 'utf-8') },
+      { role: "assistant" as const, content: fs.readFileSync(path.join(APP_CONFIG.paths.fewShots, '01-assistant.md'), 'utf-8') },
+      { role: "user" as const, content: fs.readFileSync(path.join(APP_CONFIG.paths.fewShots, '02-user.md'), 'utf-8') },
+      { role: "assistant" as const, content: fs.readFileSync(path.join(APP_CONFIG.paths.fewShots, '02-assistant.md'), 'utf-8') },
+      { role: "user" as const, content: fs.readFileSync(path.join(APP_CONFIG.paths.fewShots, '03-user.md'), 'utf-8') },
+      { role: "assistant" as const, content: fs.readFileSync(path.join(APP_CONFIG.paths.fewShots, '03-assistant.md'), 'utf-8') }
     ];
 
     const finalUserMessage = `Oferta:\n${jobOffer}\n\nPerfil:\n${personalInfo}\n\nEspecificaciones:\n${specifications}`;
-    return await aiService.generateOptimizedCv(systemPrompt, examples, finalUserMessage, ""); 
-  } catch (error: any) {
-    logger.error('Error cargando prompts o llamando a la IA', error.message);
-    throw new Error(`Fallo en la preparación de la IA: ${error.message}`);
+    return await aiService.generateOptimizedCv(systemPrompt, examples, finalUserMessage); 
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Fallo en IA';
+    logger.error('Error cargando prompts o llamando a la IA', { message });
+    throw new Error(`Fallo en la preparación de la IA: ${message}`);
   }
 });
 
@@ -115,14 +111,15 @@ ipcMain.handle('validate-resume-ai', async (_event: IpcMainInvokeEvent, jobOffer
   if (!aiService) throw new Error('El servicio de IA no está configurado correctamente.');
 
   try {
-    const systemPromptPath = path.join(externalPath, 'prompts', 'validation-system.md');
+    const systemPromptPath = path.join(APP_CONFIG.paths.prompts, 'validation-system.md');
     const systemPrompt = fs.readFileSync(systemPromptPath, 'utf-8');
 
     const finalUserMessage = `OFERTA_DE_TRABAJO:\n${jobOffer}\n\nCV_GENERADO:\n${generatedCV}`;
     return await aiService.validateResume(systemPrompt, finalUserMessage);
-  } catch (error: any) {
-    logger.error('Error en el proceso de validación por IA', error.message);
-    throw new Error(`Fallo en la validación de la IA: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Fallo en validación IA';
+    logger.error('Error en el proceso de validación por IA', { message });
+    throw new Error(`Fallo en la validación de la IA: ${message}`);
   }
 });
 
@@ -136,7 +133,7 @@ ipcMain.handle('select-directory', async (): Promise<string | null> => {
 });
 
 ipcMain.handle('generate-pdf', (_event: IpcMainInvokeEvent, content: string, templateName: string, targetDir: string): Promise<string> => {
-  return runGeneration(content, templateName, externalPath, targetDir);
+  return runGeneration(content, templateName, EXTERNAL_PATH, targetDir);
 });
 
 ipcMain.handle('open-pdf', async (_event: IpcMainInvokeEvent, p: string): Promise<string> => {
@@ -144,17 +141,18 @@ ipcMain.handle('open-pdf', async (_event: IpcMainInvokeEvent, p: string): Promis
   try {
     const result = await shell.openPath(p);
     return result || '';
-  } catch (err: any) {
-    return err.message;
+  } catch (err: unknown) {
+    return err instanceof Error ? err.message : 'Error abriendo PDF';
   }
 });
 
 ipcMain.handle('render-preview', async (_event: IpcMainInvokeEvent, content: string, templateName: string): Promise<{ success: boolean; html?: string; error?: string }> => {
   try {
-    const html = await getRenderedHtml(content, templateName, externalPath);
+    const html = await getRenderedHtml(content, templateName, EXTERNAL_PATH);
     return { success: true, html };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error en preview';
+    return { success: false, error: message };
   }
 });
 
@@ -163,4 +161,6 @@ app.whenReady().then(() => {
   createWindow();
 });
 
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('window-all-closed', () => { 
+  if (process.platform !== 'darwin') app.quit(); 
+});
