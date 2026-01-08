@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('save-info', content),
   generateCVAI: (jobOffer: string, personalInfo: string, specifications: string): Promise<string> => 
     ipcRenderer.invoke('generate-cv-ai', jobOffer, personalInfo, specifications),
+  validateResumeAI: (jobOffer: string, generatedCV: string): Promise<string> => 
+    ipcRenderer.invoke('validate-resume-ai', jobOffer, generatedCV),
   generatePDF: (content: string, templateName: string, targetDir: string): Promise<string> => 
     ipcRenderer.invoke('generate-pdf', content, templateName, targetDir),
   openPDF: (path: string): Promise<string> => 

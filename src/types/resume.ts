@@ -40,3 +40,9 @@ export const ResumeSchema = z.object({
 });
 
 export type Resume = z.infer<typeof ResumeSchema>;
+
+/**
+ * El resultado de la validación es texto plano/markdown 
+ * destinado directamente a un componente de UI (textarea).
+ */
+export type ValidationResult = string;

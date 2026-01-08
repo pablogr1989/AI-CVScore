@@ -26,6 +26,9 @@
         iframe { width: 100%; height: 100%; border: none; }
         #status { font-size: 12px; color: #adb5bd; align-self: center; }
         #errorLog2 { background: #3d1010; color: #ff8888; padding: 10px; font-size: 12px; border-radius: 4px; margin-top: 10px; display: none; overflow-y: auto; max-height: 100px; }
+        
+        /* Estilos específicos para el layout 50/50 de validación */
+        .split-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; }
     </style>
 </head>
 <body>
@@ -49,9 +52,32 @@
         </div>
     </div>
 
+    <div id="pageVal" class="page">
+        <div class="header">
+            <h2>Paso 2: Validación de Compatibilidad</h2>
+            <button class="btn-ai" id="btnRunValidation" onclick="runValidation()" disabled>🔍 Calcular Score y Mejoras</button>
+        </div>
+        <div class="content-area">
+            <div class="split-panel">
+                <div class="input-panel" style="flex: 0.4;">
+                    <span class="label">Oferta Analizada</span>
+                    <textarea id="valJobOffer" readonly style="background: #2d2d2d; opacity: 0.8;"></textarea>
+                </div>
+                <div class="input-panel" style="flex: 0.6;">
+                    <span class="label">CV Generado</span>
+                    <textarea id="valCvEditor" placeholder="El CV generado aparecerá aquí para validar..."></textarea>
+                </div>
+            </div>
+            <div class="input-panel">
+                <span class="label">Score y Comentarios de Mejora (IA)</span>
+                <textarea id="valOutput" readonly placeholder="El análisis de la IA aparecerá aquí..." style="border-color: #6f42c1;"></textarea>
+            </div>
+        </div>
+    </div>
+
     <div id="page2" class="page">
         <div class="header">
-            <h2>Paso 2: Edición y Exportación</h2>
+            <h2>Paso 3: Edición y Exportación</h2>
             <select id="templateSelect" onchange="updatePreview()">
                 <option value="classic">Diseño Clásico</option>
                 <option value="modern">Diseño Moderno</option>
@@ -74,19 +100,22 @@
     </div>
 
     <div class="footer">
-        <button id="btnBack" class="btn-nav" onclick="showPage(1)" style="visibility: hidden;">⬅️ Configuración</button>
+        <button id="btnBack" class="btn-nav" onclick="navigateBack()" style="visibility: hidden;">⬅️ Anterior</button>
         <span id="status">Listo</span>
-        <button id="btnNext" class="btn-nav" onclick="showPage(2)">Editor & Exportar ➡️</button>
+        <button id="btnNext" class="btn-nav" onclick="navigateNext()">Siguiente ➡️</button>
     </div>
 
     <script>
         let currentCvPath = null;
         let lastPdfPath = null;
+        let currentPage = 1;
 
         const cvEditor = document.getElementById('cvEditor');
+        const valCvEditor = document.getElementById('valCvEditor');
         const status = document.getElementById('status');
         const btnSaveCV = document.getElementById('btnSaveCV');
         const btnExportPDF = document.getElementById('btnExportPDF');
+        const btnRunValidation = document.getElementById('btnRunValidation');
         const errorLog2 = document.getElementById('errorLog2');
 
         window.onload = async () => {
@@ -94,13 +123,33 @@
             document.getElementById('personalInfo').value = info;
         };
 
+        // Lógica de navegación adaptada a 3 páginas
         function showPage(num) {
+            currentPage = num;
             document.getElementById('page1').classList.toggle('active', num === 1);
-            document.getElementById('page2').classList.toggle('active', num === 2);
-            document.getElementById('btnBack').style.visibility = (num === 2) ? 'visible' : 'hidden';
-            document.getElementById('btnNext').style.visibility = (num === 1) ? 'visible' : 'hidden';
-            if (num === 2) updatePreview();
+            document.getElementById('pageVal').classList.toggle('active', num === 2);
+            document.getElementById('page2').classList.toggle('active', num === 3);
+            
+            document.getElementById('btnBack').style.visibility = (num > 1) ? 'visible' : 'hidden';
+            document.getElementById('btnNext').style.visibility = (num < 3) ? 'visible' : 'hidden';
+            
+            if (num === 2) {
+                // Sincronizar datos para la validación
+                document.getElementById('valJobOffer').value = document.getElementById('jobOffer').value;
+                valCvEditor.value = cvEditor.value;
+                validateValidationButton();
+            }
+            
+            if (num === 3) {
+                // Sincronizar cambios que se hayan hecho en la página de validación de vuelta al editor
+                cvEditor.value = valCvEditor.value;
+                validateButtons();
+                updatePreview();
+            }
         }
+
+        function navigateNext() { if (currentPage < 3) showPage(currentPage + 1); }
+        function navigateBack() { if (currentPage > 1) showPage(currentPage - 1); }
 
         function validateButtons() {
             const isEmpty = !cvEditor.value.trim();
@@ -108,9 +157,17 @@
             btnExportPDF.disabled = isEmpty;
         }
 
+        function validateValidationButton() {
+            btnRunValidation.disabled = !valCvEditor.value.trim();
+        }
+
         cvEditor.addEventListener('input', () => {
             validateButtons();
             debouncePreview();
+        });
+
+        valCvEditor.addEventListener('input', () => {
+            validateValidationButton();
         });
 
         const debouncePreview = (() => {
@@ -127,8 +184,6 @@
             
             if (res.success) {
                 const template = document.getElementById('templateSelect').value;
-                
-                // CORRECCIÓN DE RUTAS: Detectar si estamos en app.asar para salir a la carpeta de recursos
                 let resourceBase = window.location.href.replace('src/renderer/index.html', '');
                 if (resourceBase.includes('app.asar')) {
                     resourceBase = resourceBase.split('app.asar')[0];
@@ -160,13 +215,32 @@
                 const result = await window.api.generateCVAI(job, info, specs);
                 cvEditor.value = result;
                 validateButtons();
-                showPage(2);
+                showPage(2); // Ir a la nueva página de validación tras generar
                 status.innerText = "✨ CV Optimizado correctamente";
             } catch (e) {
                 status.innerText = "❌ Error en IA";
                 alert(e.message);
             } finally {
                 document.getElementById('btnAI').disabled = false;
+            }
+        }
+
+        // Nueva función para ejecutar la validación
+        async function runValidation() {
+            const job = document.getElementById('valJobOffer').value;
+            const cv = valCvEditor.value;
+
+            status.innerText = "🧐 Analizando compatibilidad...";
+            btnRunValidation.disabled = true;
+            try {
+                const result = await window.api.validateResumeAI(job, cv);
+                document.getElementById('valOutput').value = result;
+                status.innerText = "✅ Análisis completado";
+            } catch (e) {
+                status.innerText = "❌ Error en Validación";
+                alert(e.message);
+            } finally {
+                btnRunValidation.disabled = false;
             }
         }
 

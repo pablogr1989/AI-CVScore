@@ -111,6 +111,21 @@ ipcMain.handle('generate-cv-ai', async (_event: IpcMainInvokeEvent, jobOffer: st
   }
 });
 
+ipcMain.handle('validate-resume-ai', async (_event: IpcMainInvokeEvent, jobOffer: string, generatedCV: string): Promise<string> => {
+  if (!aiService) throw new Error('El servicio de IA no está configurado correctamente.');
+
+  try {
+    const systemPromptPath = path.join(externalPath, 'prompts', 'validation-system.md');
+    const systemPrompt = fs.readFileSync(systemPromptPath, 'utf-8');
+
+    const finalUserMessage = `OFERTA_DE_TRABAJO:\n${jobOffer}\n\nCV_GENERADO:\n${generatedCV}`;
+    return await aiService.validateResume(systemPrompt, finalUserMessage);
+  } catch (error: any) {
+    logger.error('Error en el proceso de validación por IA', error.message);
+    throw new Error(`Fallo en la validación de la IA: ${error.message}`);
+  }
+});
+
 ipcMain.handle('select-directory', async (): Promise<string | null> => {
   const result = await dialog.showOpenDialog({
     title: 'Selecciona la carpeta donde guardar el CV',
