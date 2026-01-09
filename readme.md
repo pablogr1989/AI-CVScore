@@ -1,138 +1,155 @@
-# AI CVScore
+# AI CVScore 🚀
 
-AI CVScore es una aplicación de escritorio avanzada diseñada para transformar currículums escritos en formato Markdown (con metadatos en YAML) en documentos PDF de alta fidelidad profesional. Esta evolución integra un **Optimizador de IA basado en OpenAI** para adaptar automáticamente tu perfil a ofertas de trabajo específicas, garantizando una alta compatibilidad con sistemas ATS.
+**AI CVScore** es una aplicación de escritorio avanzada diseñada para transformar currículums escritos en formato **Markdown** (con metadatos en **YAML**) en documentos **PDF** de alta fidelidad profesional.  
+Integra un **Optimizador de IA basado en OpenAI** para adaptar perfiles a ofertas de trabajo específicas y un **motor de validación de compatibilidad ATS**.
 
 ---
 
-## 🚀 Características Principales
+## ✨ Características Principales
 
-- **Optimización con IA (OpenAI):**  
-  Generación automática de CVs adaptados a ofertas de empleo utilizando GPT-4 y técnicas de Few-Shot Prompting para mantener la estructura y el tono profesional.
+### 🤖 Optimización con IA (OpenAI)
+Generación automática de CVs utilizando modelos avanzados (**GPT-4**) y técnicas de **Few-Shot Prompting**, manteniendo estructura, semántica y tono profesional.
 
-- **Interfaz de Dos Fases (Wizard):**
-  1. **Paso 1 (Configuración e IA):** Entrada de la oferta de trabajo, gestión de información personal base e instrucciones específicas para la IA.
-  2. **Paso 2 (Edición y Exportación):** Editor de Markdown con previsualización en tiempo real y exportación profesional a PDF.
+### 📊 Módulo de Validación de Score
+Análisis intermedio del CV generado frente a la oferta laboral, devolviendo:
+- Score de compatibilidad
+- Sugerencias automáticas de mejora
 
-- **Gestión de Datos Base:**  
-  Separación entre tus datos maestros (`info.md`) y las versiones generadas para ofertas específicas.
+### 🧭 Interfaz de Tres Fases (Wizard)
 
-- **Motor de Renderizado Profesional:**  
-  Uso de Playwright (Chromium) para generar archivos PDF en formato A4 con soporte completo para estilos CSS complejos.
+**Paso 1 — Configuración e IA**  
+Entrada de oferta laboral, gestión del perfil base e instrucciones de optimización.
 
-- **Arquitectura Desacoplada:**  
-  Prompts y ejemplos de IA gestionados externamente en archivos Markdown para facilitar el ajuste del modelo sin tocar el código fuente.
+**Paso 2 — Validación de Compatibilidad**  
+Cálculo de score ATS y refinamiento semántico.
+
+**Paso 3 — Edición y Exportación**  
+Editor Markdown con previsualización en tiempo real y exportación profesional a PDF.
+
+### 🌍 Plantillas Multi-idioma
+Incluye diseños optimizados:
+- Classic (ES)
+- Classic (English)
+- Modern  
+
+Con jerarquía visual mejorada y fotografía centrada.
+
+### 📁 Gestión Nativa de Archivos
+Integración con diálogos del sistema (**Guardar como**), permitiendo versionado flexible de CVs.
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
 - **Runtime:** Node.js (v18+) & Electron  
-- **Lenguaje:** TypeScript (tipado estricto)  
-- **IA:** OpenAI API (GPT-4 Turbo)  
-- **Procesamiento de Texto:** Remark, Gray-matter & Handlebars  
-- **Generación de PDF:** Playwright  
-- **Validación de Datos:** Zod  
+- **Lenguaje:** TypeScript (ESM)  
+- **IA:** OpenAI API  
+- **Procesamiento de Texto:** Remark, Gray-matter, Handlebars  
+- **Generación PDF:** Puppeteer (Chromium)  
+- **Validación:** Zod  
 
 ---
 
 ## 📂 Estructura del Proyecto
 
 ```plaintext
-Plaintext
-├── assets/               # Recursos estáticos (imágenes de perfil, logos)
-├── bin/                  # Binarios de Playwright (autocontenidos)
-├── data/                 # Almacenamiento local (info.md, cv.md)
-├── few-shots/            # Ejemplos de entrenamiento para la IA (user/assistant)
-├── prompts/              # System Prompts para la lógica de generación
+├── assets/               # Recursos estáticos (iconos y multimedia)
+│   └── profile.png       # Fotografía de perfil (DEBE SER AÑADIDA MANUALMENTE)
+├── data/                 # Almacenamiento local de datos del usuario
+│   └── info.md           # Perfil profesional maestro (GENERADO AL ARRANCAR)
+├── few-shots/            # Ejemplos de entrenamiento IA (user/assistant)
+├── prompts/              # System Prompts (generación y validación)
 ├── src/
-│   ├── core/             # Lógica de negocio (Parser, Logger)
-│   ├── infra/            # Adaptadores de infra (Motor PDF, AiService)
-│   ├── renderer/         # Interfaz de usuario (HTML/JS de Electron)
-│   ├── types/            # Definiciones de tipos y esquemas Zod
-│   ├── main.ts           # Proceso principal de Electron
-│   └── preload.cts       # Puente de comunicación seguro (IPC)
-├── templates/            # Plantillas Handlebars (Classic, Modern)
-├── .env                  # Configuración de API Keys (No incluido en repo)
-└── package.json          # Configuración y dependencias
+│   ├── core/             # Lógica de negocio central
+│   │   └── interfaces/   # Contratos (IAIService)
+│   ├── infra/            # Implementaciones técnicas
+│   ├── renderer/         # UI del Wizard
+│   ├── types/            # Esquemas Zod y tipos
+│   ├── main.ts           # Proceso principal Electron
+│   ├── preload.cts       # Context Isolation / IPC
+│   └── index.ts          # Entrada por consola
+├── templates/            # Plantillas PDF
+│   ├── classic/
+│   ├── classic-english/
+│   └── modern/
+├── tests/                # Tests unitarios (Vitest)
+├── .env                  # API Keys (NO incluido)
+├── package.json
+└── tsconfig.json
 ```
-
-## 📂 Estructura Crítica de Archivos
-
-Para el correcto funcionamiento de la IA y el renderizado, se debe respetar la siguiente estructura:
-
-### 1. Prompts y Ejemplos (Few-Shots)
-
-La aplicación busca nombres de archivos específicos en el proceso principal:
-
-- `prompts/generation-system.md`: El System Prompt principal
-- `few-shots/`: Debe contener exactamente:
-  - `01-user.md`, `01-assistant.md`
-  - `02-user.md`, `02-assistant.md`
-  - `03-user.md`, `03-assistant.md`
-
-### 2. Activos Visuales
-
-- `assets/profile.png`: Tu fotografía de perfil (soporta .jpg y .webp) que se inyectará automáticamente en las plantillas
 
 ---
 
-## ⚙️ Instalación y Configuración Crítica
+## ⚙️ Instalación y Configuración
 
-### 1. Requisitos Previos
+### 1️⃣ Requisitos Previos
+- Node.js v18 o superior
+- API Key válida de OpenAI
 
-- Node.js v18.0.0 o superior
-- Una API Key válida de OpenAI
-
-### 2. Instalación de dependencias
-
+### 2️⃣ Instalación
 ```bash
 npm install
-npm run install-runtime
 ```
 
-### 3. Configuración de API (OpenAI)
+### 3️⃣ Configuración de API
+Crea un archivo `.env` en la raíz:
 
-Crea un archivo llamado `.env` en la raíz del proyecto con tu clave de API:
-
-```plaintext
+```env
 OPENAI_API_KEY=tu_clave_aqui
 ```
 
-**Nota**: En la versión instalada (producción), este archivo debe copiarse manualmente a la carpeta `/resources/.env` si no se incluyó en el empaquetado.
-
-### 4. Creación de Información Base
-
-La IA necesita tus datos maestros para trabajar. Crea el archivo `data/info.md` siguiendo esta estructura sugerida:
+### 4️⃣ Perfil Profesional (`data/info.md`)
+Si no existe, se genera automáticamente al iniciar.  
+Debes editarlo con tu información real:
 
 ```markdown
 # Mi Perfil Profesional
-
 - **Nombre:** Tu Nombre
-- **Experiencia:** Detalla aquí toda tu trayectoria...
-- **Stack:** Lista de tecnologías y habilidades...
+- **Experiencia:** Trayectoria profesional...
+- **Stack:** Tecnologías y habilidades...
 - **Educación:** Títulos y certificaciones...
+```
+
+### 5️⃣ Fotografía de Perfil
+Añade tu foto en `assets/profile.png`  
+(soporta `.png`, `.jpg`, `.webp`)
+
+---
+
+## 📌 Estructura Crítica Requerida
+
+- `prompts/generation-system.md`
+- `prompts/validation-system.md`
+- `few-shots/01-user.md → 03-assistant.md`
+- `templates/*/layout.hbs`
+- `templates/*/styles.css`
+
+---
+
+## 🧪 Scripts Disponibles
+
+```bash
+npm run electron:dev   # Desarrollo
+npm run build          # Build TypeScript
+npm run dist           # Instalador Windows (NSIS)
+npm run test           # Tests con Vitest
+npm run format         # Prettier
 ```
 
 ---
 
-## 🛠️ Scripts de Desarrollo
+## 🔄 Flujo de Trabajo
 
-- `npm run electron:dev` – Compila TypeScript y lanza la aplicación en modo desarrollo.  
-- `npm run build` – Compila el proyecto (tsc).  
-- `npm run dist` – Empaqueta la aplicación para distribución (Windows/NSIS).  
-
----
-
-## 📝 Flujo de Trabajo
-
-1. **Paso 1:** Pega la descripción de la oferta de trabajo y revisa que tu `info.md` esté actualizado. Añade especificaciones adicionales si quieres que la IA destaque algo concreto.  
-2. **Generación:** Pulsa "Generar con IA". El sistema enviará el prompt configurado junto con los ejemplos de la carpeta `few-shots` para obtener el mejor resultado.  
-3. **Paso 2:** Revisa el Markdown generado. Puedes cargar CVs previos o guardar la versión actual.  
-4. **Exportación:** Selecciona tu plantilla preferida y exporta a PDF. El sistema creará una carpeta con marca de tiempo para mantener tus versiones organizadas.  
+1. **Optimización:** Introduce la oferta → IA genera el CV.
+2. **Validación:** Obtén score ATS + feedback.
+3. **Personalización:** Ajustes manuales y plantilla.
+4. **Exportación:** Markdown + PDF profesional.
 
 ---
 
-**Autor:** Pablo Gómez Ramírez  
+## 📄 Licencia
+Proyecto personal / uso profesional.
 
-**Licencia:** MIT
+---
 
+**AI CVScore** — Optimiza tu CV con IA, valida con lógica real y exporta como un profesional.
