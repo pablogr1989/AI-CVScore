@@ -3,7 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('api', {
   selectFile: (): Promise<{ content: string; path: string } | null> =>
     ipcRenderer.invoke('select-file'),
-  saveCV: (content: string, path: string): Promise<void> =>
+  saveCV: (content: string, path: string | null): Promise<string | null> =>
     ipcRenderer.invoke('save-cv', content, path),
   loadInfo: (): Promise<string> => 
     ipcRenderer.invoke('load-info'),

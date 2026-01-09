@@ -76,8 +76,23 @@ ipcMain.handle('select-file', async (): Promise<{ content: string; path: string 
   return { content, path: filePath };
 });
 
-ipcMain.handle('save-cv', (_event: IpcMainInvokeEvent, content: string, filePath: string): void => {
-  fs.writeFileSync(filePath, content, 'utf-8');
+ipcMain.handle('save-cv', async (_event: IpcMainInvokeEvent, content: string, currentPath: string | null): Promise<string | null> => {
+  const result = await dialog.showSaveDialog({
+    title: 'Guardar CV (Markdown)',
+    filters: [{ name: 'Markdown', extensions: ['md'] }],
+    defaultPath: currentPath || 'mi-cv-optimizado.md'
+  });
+
+  if (result.canceled || !result.filePath) return null;
+
+  try {
+    fs.writeFileSync(result.filePath, content, 'utf-8');
+    return result.filePath;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al escribir archivo';
+    logger.error('Error en save-cv handler', { message });
+    throw err;
+  }
 });
 
 ipcMain.handle('load-info', (): string => fs.readFileSync(APP_CONFIG.paths.info, 'utf-8'));

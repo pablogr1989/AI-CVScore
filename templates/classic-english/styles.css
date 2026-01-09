@@ -1,4 +1,4 @@
-/* Configuración de página A4 */
+/* A4 Page Configuration */
 @page { size: A4; margin: 0; }
 
 body {
@@ -29,14 +29,13 @@ body {
 .sidebar-identity {
     background: linear-gradient(152deg, #4db8d8 0%, #4db8d8 48%, #333a40 48.1%, #333a40 100%);
     padding: 3mm 0mm 3mm 0mm;
-    /* Método de centrado compatible con Chromium < 125 */
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .photo-container {
-    width: 36mm; /* Tamaño reducido un 40% según solicitud previa */
+    width: 36mm;
     height: 36mm;
     border-radius: 50%; 
     overflow: hidden;
@@ -139,8 +138,6 @@ body {
     margin-bottom: 8px;
 }
 
-.summary { text-align: justify; margin-bottom: 4mm; font-size: 12px; }
-
 .experience-item { margin-bottom: 5mm; }
 
 .exp-role strong { 
@@ -190,7 +187,7 @@ body {
     font-weight: 600; 
     font-size: 12px; 
     margin: 1mm 0; 
-    color: rgb(85, 199, 218); /* Sincronizado con .exp-company */
+    color: rgb(85, 199, 218); 
 }
 .edu-description { font-size: 11px; color: #555; font-style: italic; }
 
