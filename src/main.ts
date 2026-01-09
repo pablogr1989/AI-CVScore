@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { runGeneration, getRenderedHtml } from './index.js';
 import { Logger } from './core/logger.js';
 import { AiService } from './infra/aiService.js';
-import { APP_CONFIG, EXTERNAL_PATH } from './core/config.js';
+import { APP_CONFIG, EXTERNAL_PATH, APP_ROOT } from './core/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,12 +49,13 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false
     },
-    title: "AI-CVScore Optimizer"
+    title: "AI-CVScore"
   });
 
-  const htmlPath = path.join(EXTERNAL_PATH, 'src', 'renderer', 'index.html');
+  const htmlPath = path.join(APP_ROOT, 'src', 'renderer', 'index.html');
+  
   win.loadFile(htmlPath).catch((err: Error) => {
-    logger.error('Error al ejecutar win.loadFile', { message: err.message });
+    logger.error('Error al ejecutar win.loadFile', { message: err.message, path: htmlPath });
   });
 }
 

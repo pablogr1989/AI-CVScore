@@ -54,7 +54,15 @@
     "files": [
       "dist/**/*",
       "src/renderer/**/*",
-      "package.json"
+      "package.json",
+      {
+        "from": "node_modules/puppeteer/.local-chromium",
+        "to": "node_modules/puppeteer/.local-chromium"
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/puppeteer/.local-chromium/**/*"
     ],
     "extraResources": [
       { "from": "templates", "to": "templates", "filter": ["**/*"] },
@@ -67,14 +75,16 @@
     ],
     "win": {
       "target": ["nsis"],
-      "executableName": "ai-cvscore"
+      "executableName": "ai-cvscore",
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
       "shortcutName": "AI CVScore",
       "artifactName": "AI-instalador.${ext}"
-    },
-    "asar": true
+    }
   }
 }

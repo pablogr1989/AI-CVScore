@@ -5,18 +5,20 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Detectamos si estamos en Vitest o si el objeto 'app' no existe (entorno Node puro)
 const isTest = process.env.VITEST === 'true';
-// Si app existe, leemos isPackaged. Si no (como en tests), asumimos modo dev.
 const isDev = app ? !app.isPackaged : true;
 
 /**
- * Ruta raíz del proyecto o de recursos empaquetados.
- * En test o dev usamos la ruta relativa al proyecto.
- * process.resourcesPath solo existe en el entorno empaquetado de Electron.
+ * APP_ROOT: Siempre apunta a la raíz del código (el interior del .asar en producción).
+ * Usamos path.resolve(__dirname, '..', '..') porque el JS compilado está en dist/core/config.js
+ */
+export const APP_ROOT = path.resolve(__dirname, '..', '..');
+
+/**
+ * EXTERNAL_PATH: Apunta a la carpeta de recursos externos instalada en el sistema.
  */
 export const EXTERNAL_PATH = (isDev || isTest || !app)
-  ? path.resolve(__dirname, '..', '..')
+  ? APP_ROOT
   : process.resourcesPath;
 
 export const APP_CONFIG = {
