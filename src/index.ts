@@ -54,16 +54,17 @@ export async function getRenderedHtml(
  * Ejecuta el proceso de generación: carpeta, copia de assets y PDF.
  */
 export async function runGeneration(
-  markdownContent?: string, 
+  markdownContent: string, 
   templateName: string = 'classic',
-  basePath?: string,
-  targetDir?: string
+  basePath: string,
+  targetDir: string,
+  companyName: string,
+  jobOffer: string
 ): Promise<string> {
   const pdfEngine = new PdfEngine();
   const root = basePath || path.resolve(__dirname, '..');
   
-  const baseOutputDir = targetDir || path.join(root, 'output');
-  
+  // 1. Crear nombre de carpeta formateado: Empresa_DD-MM-YYYY_HH-mm
   const now = new Date();
   const day = now.getDate().toString().padStart(2, '0');
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -71,8 +72,8 @@ export async function runGeneration(
   const hours = now.getHours().toString().padStart(2, '0');
   const minutes = now.getMinutes().toString().padStart(2, '0');
   
-  const folderName = `CV_${day}-${month}-${year}_${hours}-${minutes}`;
-  const finalOutputDir = path.join(baseOutputDir, folderName);
+  const folderName = `${companyName.replace(/[^a-z0-9]/gi, '_')}_${day}-${month}-${year}_${hours}-${minutes}`;
+  const finalOutputDir = path.join(targetDir, folderName);
 
   if (!fs.existsSync(finalOutputDir)) {
     fs.mkdirSync(finalOutputDir, { recursive: true });
@@ -82,7 +83,7 @@ export async function runGeneration(
   const htmlPath = path.join(finalOutputDir, 'cv.html');
   const pdfPath = path.join(finalOutputDir, 'cv.pdf');
 
-  // Copia de la imagen de perfil a la carpeta final
+  // 2. Copia de la imagen de perfil a la carpeta final
   const assetsDir = path.join(root, 'assets');
   const extensions = ['png', 'jpg', 'jpeg', 'webp'];
   const found = extensions.find(ext => fs.existsSync(path.join(assetsDir, `profile.${ext}`)));
@@ -90,15 +91,18 @@ export async function runGeneration(
     fs.copyFileSync(path.join(assetsDir, `profile.${found}`), path.join(finalOutputDir, `profile.${found}`));
   }
 
-  // Copia del CSS de la plantilla a la carpeta final
+  // 3. Copia del CSS de la plantilla a la carpeta final
   const cssSource = path.join(root, 'templates', templateName, 'styles.css');
   if (fs.existsSync(cssSource)) {
     fs.copyFileSync(cssSource, path.join(finalOutputDir, 'styles.css'));
   }
   
+  // 4. Guardar archivos adicionales
   fs.writeFileSync(htmlPath, html, 'utf-8');
+  fs.writeFileSync(path.join(finalOutputDir, 'cv-generado.md'), markdownContent, 'utf-8');
+  fs.writeFileSync(path.join(finalOutputDir, 'oferta.txt'), jobOffer, 'utf-8');
   
-  // Llamada al motor pasando la ruta del archivo físico para que cargue los assets locales
+  // 5. Llamada al motor pasando el archivo físico para que cargue los estilos locales
   await pdfEngine.generate(htmlPath, pdfPath, root);
   
   return pdfPath;

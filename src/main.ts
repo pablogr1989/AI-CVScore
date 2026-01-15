@@ -148,8 +148,15 @@ ipcMain.handle('select-directory', async (): Promise<string | null> => {
   return result.filePaths[0];
 });
 
-ipcMain.handle('generate-pdf', (_event: IpcMainInvokeEvent, content: string, templateName: string, targetDir: string): Promise<string> => {
-  return runGeneration(content, templateName, EXTERNAL_PATH, targetDir);
+ipcMain.handle('generate-pdf', (
+    _event: IpcMainInvokeEvent, 
+    content: string, 
+    templateName: string, 
+    targetDir: string,
+    companyName: string,
+    jobOffer: string
+): Promise<string> => {
+  return runGeneration(content, templateName, EXTERNAL_PATH, targetDir, companyName, jobOffer);
 });
 
 ipcMain.handle('open-pdf', async (_event: IpcMainInvokeEvent, p: string): Promise<string> => {

@@ -127,6 +127,7 @@ Desarrollador de software y **Gameplay Programmer** con experiencia en entornos 
 
 ## Educación y Formación
 
+- **Curso especialización en Inteligencia Artificial y Big Data** - IES Virgen de Gracia (2025 – 2026)
 - **Máster en Creación de Videojuegos** – Universidad Pompeu Fabra (2019 – 2020)
 - **Grado en Ingeniería Informática** – Escuela Superior de Informática, Ciudad Real (2011 – 2018)
 - **Grado Superior en Desarrollo de Aplicaciones Informáticas** – IES Virgen de Gracia (2008 – 2011)
@@ -288,4 +289,215 @@ Investigación y Hardware
 •	Instrumentación: Manejo de dispositivos BitScope para procesamiento de señales.
 •	Sistemas Operativos: Administración y uso avanzado de Windows y Linux.
 •	Redes: Montaje y mantenimiento de redes de ordenadores y equipos informáticos.
+
+** Recientes proyectos
+
+# Proyecto: GymLevelUp (Android App) -> Estado: Terminado
+
+**GymLevelUp** es una aplicación nativa de Android diseñada para la gestión y seguimiento avanzado de rutinas de entrenamiento físico. El proyecto destaca por el uso de un stack tecnológico moderno y una arquitectura robusta, enfocada en la escalabilidad y la experiencia de usuario.
+
+## Aspectos Técnicos Clave:
+
+### Lenguaje y Framework:
+Desarrollada íntegramente en **Kotlin** utilizando **Jetpack Compose** para la interfaz de usuario, siguiendo las directrices de **Material Design 3**.
+
+### Arquitectura:
+Implementación de **Clean Architecture** estructurada en capas (**Data, Domain, UI**) y el patrón de diseño **MVVM (Model-View-ViewModel)**. Esto garantiza un código desacoplado, testeable y fácil de mantener.
+
+### Inyección de Dependencias:
+Uso de **Hilt (Dagger)** para la gestión de dependencias, facilitando la modularización y la escalabilidad del sistema.
+
+### Persistencia de Datos:
+Utilización de **Room Database** para el almacenamiento local complejo, manejando relaciones entre entidades (calendarios, ejercicios, series e historial).
+
+### Gestión de Estados y Asincronía:
+Uso intensivo de **Kotlin Coroutines** y **Flow** para operaciones reactivas y manejo de flujos de datos en tiempo real.
+
+## Componentes Avanzados de Android:
+
+### Foreground Services:
+Implementación de un servicio en primer plano para el cronómetro de descanso, asegurando que el temporizador siga activo aunque la app esté en segundo plano.
+
+### Notifications & AlarmManager:
+Sistema de notificaciones personalizadas y alarmas para avisar al usuario tras finalizar los tiempos de descanso.
+
+### Backup System:
+Funcionalidad de exportación e importación de datos en formato **JSON** para asegurar la portabilidad de la información del usuario.
+
+### Media Handling:
+Gestión de imágenes personalizadas para ejercicios con almacenamiento interno eficiente.
+
+## Funcionalidades Destacadas:
+
+### Planificación Flexible:
+Creación de calendarios de entrenamiento estructurados por meses, semanas y días.
+
+### Modo Entrenamiento:
+Interfaz dedicada para el seguimiento en vivo de la sesión, permitiendo registrar series y repeticiones mientras se controla el tiempo de descanso.
+
+### Historial y Progreso:
+Registro detallado de la evolución de cargas y volumen de entrenamiento por cada ejercicio.
+
+### UI/UX Personalizada:
+Componentes de interfaz propios (**"HunterComponents"**) para una estética coherente y adaptativa (**Dark/Light mode**).
+
+# Proyecto: AlpocIA (Asistente Inteligente de Presupuestos) -> Estado: En desarrollo
+
+**AlpocIA** es una solución **Full-Stack** diseñada para automatizar la creación de presupuestos y la gestión de clientes mediante **Inteligencia Artificial**. El ecosistema permite a los profesionales generar documentos técnicos complejos a través de una interacción fluida en lenguaje natural, integrando una aplicación móvil nativa con un backend de microservicios robusto.
+
+## 1. Cliente Android (Frontend)
+
+Desarrollado con las tecnologías más modernas del ecosistema Android para garantizar una experiencia de usuario reactiva y un rendimiento óptimo.
+
+### Stack Tecnológico:
+
+**Lenguaje:** Kotlin.
+
+**Interfaz de Usuario:** Construida íntegramente con **Jetpack Compose**, utilizando componentes personalizados para flujos de chat y estados complejos.
+
+**Arquitectura:** Implementación de **MVVM** con **Hilt (Dagger)** para la inyección de dependencias y **StateFlow/Flow** para una gestión de estado reactiva.
+
+**Persistencia:** **Room Database** para el almacenamiento local de precios, mensajes y clientes.
+
+**Networking:** **Retrofit** para el consumo de APIs REST y sincronización en tiempo real con el backend.
+
+**Seguridad:** Integración de **Google Identity/Credentials API** para autenticación segura y **DataStore** para la gestión de preferencias y tokens.
+
+**Funcionalidades:** Gestión avanzada de ciclos de vida para la descarga de PDFs y sincronización de datos asíncrona.
+
+## 2. Backend (Node.js & Microservicios)
+
+El sistema utiliza una arquitectura de servicios especializados para maximizar la escalabilidad y la seguridad en el procesamiento de datos.
+
+### Stack Tecnológico:
+
+**Entorno:** Node.js con el framework **Express**.
+
+**Base de Datos:** **Supabase (PostgreSQL)** para la persistencia de datos profesional.
+
+**Orquestación de IA:** Integración avanzada con la **API de OpenAI (GPT)**, incluyendo un motor de procesamiento que transforma lenguaje natural en esquemas **JSON** estructurados.
+
+**Generación de Documentos:** Motor de creación de **PDFs** profesionales desde cero mediante **PDFKit**, con lógica de normalización de datos y cálculos fiscales automáticos.
+
+### Seguridad y Robustez:
+
+**Helmet:** Protección de cabeceras HTTP.
+
+**Rate Limiting:** Prevención de ataques de fuerza bruta en rutas críticas de autenticación.
+
+**Winston:** Sistema de logging centralizado para monitorización de errores.
+
+## 3. Aspectos Técnicos Destacados:
+
+**Integración de IA con Lógica de Negocio:** El backend no solo actúa como un puente; valida los datos de la IA, consulta la base de datos de precios y formatea la respuesta para que la app Android la renderice como componentes nativos.
+
+**Resiliencia del Sistema:** Implementación de mecanismos de reintento y validación automática de formato para asegurar la integridad de las respuestas generadas por la IA.
+
+**Entorno de Desarrollo Profesional:** Uso de variables de entorno, configuración de seguridad de red personalizada y reglas de **Proguard** para la optimización del código en producción.
+
+
+# Proyecto: Control de Asistencia y Asistente de Voz IA -> Estado: Terminado
+
+Este sistema híbrido avanzado, desarrollado en **Python**, integra seguridad biométrica y automatización mediante lenguaje natural. El proyecto resuelve dos necesidades críticas: la gestión de presencia laboral mediante reconocimiento facial y la mejora de la productividad a través de un asistente virtual inteligente que interactúa con el sistema operativo y servicios de terceros.
+
+## Aspectos Técnicos Clave:
+
+### Autenticación Biométrica con Prueba de Vida (Liveness):
+Implementación de reconocimiento facial que no solo identifica al usuario, sino que utiliza **IA Vision** para verificar gestos aleatorios (ej. *"levanta dos dedos"*), evitando suplantaciones mediante fotografías.
+
+### Asistente Virtual con Procesamiento de Lenguaje Natural (NLP):
+Orquestación de **OpenAI (GPT-4)** para interpretar la intención del usuario. El sistema es capaz de entender comandos complejos y ejecutar múltiples tareas en una sola instrucción.
+
+## Automatización y Control del Sistema:
+
+### Integración de APIs Externas:
+Control total de reproducción musical mediante la **API de Spotify**.
+
+### Control de GUI:
+Apertura y gestión de aplicaciones locales (calculadora, editores de texto, etc.) y búsquedas automatizadas en **YouTube**.
+
+### Gestión de Tiempo:
+Sistema de alarmas y temporizadores integrados.
+
+### Interfaz de Voz Completa:
+Flujo guiado de principio a fin mediante motores de **Speech-to-Text (STT)** y **Text-to-Speech (TTS)**, permitiendo incluso el registro de nuevos usuarios sin usar el teclado.
+
+### Gestión de Datos Local:
+Sistema de persistencia basado en **JSON** para el registro de asistencia, perfiles de usuario y *encodings* faciales.
+
+## Stack Tecnológico:
+
+### Lenguaje Principal:
+Python 3.8+.
+
+### Visión Artificial:
+**OpenCV** y **Face-Recognition** (basado en *dlib*) para detección y reconocimiento biométrico.
+
+### Inteligencia Artificial:
+**OpenAI API (GPT-4o/turbo)** para el procesamiento de comandos y validación de pruebas de vida por visión.
+
+### Voz y Lenguaje:
+- **SpeechRecognition (Google API)** para la transcripción de audio.  
+- **Pyttsx3** para la síntesis de voz offline.
+
+### Integraciones:
+**Spotipy (Spotify SDK)** y **PyAutoGUI** para la automatización de tareas en el sistema operativo.
+
+### Multimedia:
+**Pygame** para la gestión de efectos de sonido y *feedback* auditivo.
+
+### Gestión de Datos:
+**Pydantic** para validación de datos y **python-dotenv** para seguridad de credenciales.
+
+
+
+# Proyecto: AI CVScore (Optimizador de CV y Validador ATS) - Estado: Terminado
+
+**AI CVScore** es una aplicación de escritorio avanzada diseñada para cerrar la brecha entre los profesionales y los sistemas de selección modernos. Su función principal es transformar perfiles base en formato **Markdown** en currículums **PDF** de alta fidelidad, optimizados específicamente para ofertas de trabajo individuales mediante **IA**.
+
+## Aspectos Técnicos Clave:
+
+### Optimización Inteligente:
+Utiliza modelos de **OpenAI (GPT-4)** y técnicas de **Few-Shot Prompting** para adaptar la semántica, estructura y tono del CV a una oferta específica sin perder la esencia del perfil profesional.
+
+### Validación de Compatibilidad ATS:
+Incluye un módulo que analiza el score de compatibilidad del CV generado frente a la descripción de la vacante, proporcionando sugerencias automáticas de refinamiento.
+
+### Interfaz de Usuario "Wizard" de Tres Fases:
+Guía al usuario a través de un flujo estructurado que comprende la configuración de la oferta, la validación del score y la edición final con previsualización en tiempo real.
+
+### Motor de Plantillas Dinámico:
+Genera documentos con diseños profesionales (**"Classic"** y **"Modern"**) en múltiples idiomas, gestionando la jerarquía visual y recursos estáticos como fotografías.
+
+### Arquitectura de Escritorio Robusta:
+Desarrollada como una aplicación nativa utilizando **Electron**, lo que permite una gestión de archivos local segura y una experiencia de usuario fluida.
+
+## Stack Tecnológico:
+
+### Runtime & Framework:
+**Node.js** y **Electron** para el desarrollo de la aplicación de escritorio.
+
+### Lenguaje:
+**TypeScript (ESM)** para garantizar un código tipado y mantenible.
+
+### IA & NLP:
+**OpenAI API (GPT-4)** para la optimización semántica y el análisis de compatibilidad.
+
+### Procesamiento de Texto:
+- **Remark:** Para el procesamiento de contenido Markdown.  
+- **Handlebars:** Como motor de plantillas para la estructura del CV.  
+- **Gray-matter:** Para la gestión de metadatos YAML.
+
+### Generación de Documentos:
+**Puppeteer (Chromium)** como motor de renderizado para la exportación de PDFs de alta precisión.
+
+### Validación y Seguridad:
+**Zod** para la validación de esquemas de datos y tipos.
+
+### Logging y Pruebas:
+- **Winston:** Para un registro de errores y actividad centralizado.  
+- **Vitest:** Para la ejecución de tests unitarios y asegurar la fiabilidad del motor de procesamiento.
+
+
+
 

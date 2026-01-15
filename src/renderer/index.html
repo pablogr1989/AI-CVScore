@@ -16,6 +16,8 @@
         .label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; }
         textarea { flex: 1; background: #252526; color: #d4d4d4; border: 1px solid #3c3c3c; padding: 12px; font-family: 'Consolas', monospace; font-size: 13px; resize: none; border-radius: 4px; outline: none; }
         textarea:focus { border-color: #007acc; }
+        input[type="text"] { background: #252526; color: white; border: 1px solid #3c3c3c; padding: 8px; border-radius: 4px; outline: none; }
+        input[type="text"]:focus { border-color: #007acc; }
         button { padding: 10px 20px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
         button:disabled { background: #444 !important; color: #777 !important; cursor: not-allowed; opacity: 0.6; }
         .btn-primary { background: #007acc; color: white; }
@@ -35,6 +37,10 @@
     <div id="page1" class="page active">
         <div class="header">
             <h2>Paso 1: Configuración e IA</h2>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="label" style="color: #6f42c1;">Empresa / Referencia</span>
+                <input type="text" id="companyName" placeholder="Ej: Indra" style="width: 200px;">
+            </div>
             <button class="btn-ai" id="btnAI" onclick="generateFromAI()">✨ Generar CV con IA</button>
         </div>
         <div class="content-area">
@@ -79,7 +85,9 @@
             <h2>Paso 3: Edición y Exportación</h2>
             <select id="templateSelect" onchange="updatePreview()">
                 <option value="classic">Diseño Clásico (ES)</option>
+                <option value="classic-v2">Diseño Clásico v2 (ES)</option>
                 <option value="classic-english">Diseño Clásico (EN)</option>
+                <option value="classic-v2-english">Diseño Clásico v2 (EN)</option>
                 <option value="modern">Diseño Moderno</option>
             </select>
             <button class="btn-nav" onclick="loadExternalCv()">📁 Cargar CV</button>
@@ -263,14 +271,23 @@
             const dir = await window.api.selectDirectory();
             if (!dir) return;
 
-            status.innerText = "Generando PDF...";
+            const company = document.getElementById('companyName').value.trim() || 'Empresa';
+            const offer = document.getElementById('jobOffer').value;
+
+            status.innerText = "Generando archivos y PDF...";
             try {
-                const path = await window.api.generatePDF(cvEditor.value, document.getElementById('templateSelect').value, dir);
+                const path = await window.api.generatePDF(
+                    cvEditor.value, 
+                    document.getElementById('templateSelect').value, 
+                    dir,
+                    company,
+                    offer
+                );
                 lastPdfPath = path;
                 document.getElementById('btnOpen').style.display = 'inline-block';
-                status.innerText = `✅ PDF Listo en: ${path}`;
+                status.innerText = `✅ PDF y archivos listos en: ${path}`;
             } catch (e) {
-                alert("Error al generar PDF: " + e.message);
+                alert("Error al generar: " + e.message);
             }
         }
 
